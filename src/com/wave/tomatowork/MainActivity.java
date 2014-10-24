@@ -1,9 +1,14 @@
 package com.wave.tomatowork;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -12,7 +17,7 @@ import android.view.MenuItem;
 public class MainActivity extends ActionBarActivity {
 
 	private static String TAG = "TW-MA";
-	private static long TotalCount = 25*60L;
+	private static long TotalCountSeconds = 25*60L;
 	private static CountDownTask countDownTask;
 
 	@Override
@@ -23,6 +28,22 @@ public class MainActivity extends ActionBarActivity {
 		// 需要正确处理 Activity 多次创建的问题。
 		startCountTask();
 		//queryMediaStore();
+		//startAM();
+	}
+
+	@SuppressWarnings("unused")
+	private void startAM() {
+		Context context = this.getApplicationContext();
+		AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+		Intent intent = new Intent(context, AlarmBroadcastReceiver.class);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+		Log.d(TAG, "调度 AlarmManager.setRepeating...");
+		// 这个方法在 MIUI 上会变成每5分钟才检查一次，并且如果app被清理了，所设置的alarm会失效，WAKEUP
+		// 无法点亮屏幕。
+		alarmMgr.setRepeating(
+			AlarmManager.ELAPSED_REALTIME_WAKEUP, 
+			SystemClock.elapsedRealtime()+1000, 5000L, pendingIntent
+		);
 	}
 
 	@SuppressWarnings("unused")
@@ -51,7 +72,7 @@ public class MainActivity extends ActionBarActivity {
 		if (countDownTask == null){
 			Log.d(TAG, "开始 count down thread.");
 			countDownTask = new CountDownTask(this);
-			countDownTask.execute(TotalCount);
+			countDownTask.execute(TotalCountSeconds);
 		}else{
 			Log.d(TAG, "Already started a task, so we don't need start again.");
 			// 但要更新 task 的属性
@@ -62,7 +83,7 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		// getMenuInflater().inflate(R.menu.main, menu);
+		 getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 
